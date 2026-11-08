@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rollenkampf</title>
+<meta name="description" content="Winter-Challenge auf der Rolle – wer fährt mehr?">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚴</text></svg>">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f4f3ef;--surface-1:#fcfcfb;--surface-2:#efeee9;--border:#e2e0d8;
+  --text-primary:#0b0b0b;--text-secondary:#52514e;--text-muted:#7a7974;--grid:#e6e4dd;
+  --series-1:#2a78d6;--series-2:#eb6834;--series-3:#1baf7a;
+  --accent:#eb6834;--radius:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --bg:#121211;--surface-1:#1a1a19;--surface-2:#242422;--border:#2f2f2c;
+    --text-primary:#f0efec;--text-secondary:#c3c2b7;--text-muted:#8f8e86;--grid:#2c2c29;
+    --series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;--accent:#d95926;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121211;--surface-1:#1a1a19;--surface-2:#242422;--border:#2f2f2c;
+  --text-primary:#f0efec;--text-secondary:#c3c2b7;--text-muted:#8f8e86;--grid:#2c2c29;
+  --series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;--accent:#d95926;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text-primary);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:28px 16px 64px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:20px}
+h1{margin:0;font-size:clamp(30px,6vw,44px);letter-spacing:-.02em;line-height:1}
+h1 span{color:var(--accent)}
+.sub{color:var(--text-secondary);margin-top:6px}
+.meta{color:var(--text-muted);font-size:13px;text-align:right}
+.progress{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-top:6px;width:200px;margin-left:auto}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 16px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 12px;color:var(--text-secondary);font-weight:600;letter-spacing:.01em}
+.board{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--surface-2)}
+.rank{font-size:26px;text-align:center}
+.who{display:flex;align-items:center;gap:8px;font-weight:650;font-size:17px}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.facts{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--text-secondary);font-size:13px;margin-top:3px}
+.hours{text-align:right;font-variant-numeric:tabular-nums}
+.hours b{font-size:26px;letter-spacing:-.02em}
+.hours small{display:block;color:var(--text-muted);font-size:12px}
+.badge{font-size:11px;padding:2px 7px;border-radius:99px;background:var(--surface-1);border:1px solid var(--border);color:var(--text-muted);font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--text-secondary);margin:-4px 0 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 18px rgba(0,0,0,.12);opacity:0;transition:opacity .1s;white-space:nowrap;z-index:2}
+.tip .t{color:var(--text-muted);margin-bottom:4px}
+.tip .l{display:flex;align-items:center;gap:6px;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.axis text{fill:var(--text-muted);font-size:11px}
+.grid line{stroke:var(--grid)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.fun{background:var(--surface-2);border-radius:12px;padding:12px 14px}
+.fun .k{color:var(--text-muted);font-size:12.5px}
+.fun .v{font-weight:650;font-size:16px;margin-top:2px}
+.fun .s{color:var(--text-secondary);font-size:13px}
+.feed{list-style:none;margin:0;padding:0}
+.feed li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--border);font-size:14px}
+.feed li:first-child{border-top:0}
+.feed .d{color:var(--text-muted);font-variant-numeric:tabular-nums;font-size:13px}
+details summary{cursor:pointer;color:var(--text-secondary);font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:10px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;text-align:right;border-top:1px solid var(--border)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--text-muted);font-weight:500}
+.rules{color:var(--text-secondary);font-size:13.5px}
+.rules li{margin:3px 0}
+footer{color:var(--text-muted);font-size:12px;text-align:center;margin-top:24px}
+.empty{color:var(--text-muted);font-size:14px;padding:8px 0}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;padding:3px;margin:0 0 16px;gap:2px}
+.seg button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--text-secondary);padding:6px 14px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface-1);color:var(--text-primary);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.note{color:var(--text-muted);font-size:12.5px;margin:-6px 0 10px}
+@media (max-width:560px){.row{grid-template-columns:30px 1fr auto;padding:10px}.rank{font-size:22px}.hours b{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Rollen<span>kampf</span></h1>
+      <div class="sub" id="season">Winter-Challenge auf der Rolle</div>
+    </div>
+    <div class="meta"><div id="days"></div><div class="progress"><i id="prog"></i></div><div id="updated" style="margin-top:6px"></div></div>
+  </header>
+
+  <div class="seg" role="group" aria-label="Wertung wählen"><button data-m="time" aria-pressed="true">⏱ Fahrzeit</button><button data-m="km" aria-pressed="false">📏 Kilometer</button></div>
+
+  <section class="card"><h2 id="h-board">Gesamtwertung · Fahrzeit</h2><div class="note" id="note"></div><div class="board" id="board"></div></section>
+
+  <section class="card">
+    <h2 id="h-race">Rennverlauf · kumulierte Stunden</h2>
+    <div class="legend" id="legend1"></div>
+    <div class="chart" id="race"></div>
+  </section>
+
+  <section class="card">
+    <h2 id="h-week">Stunden pro Woche</h2>
+    <div class="legend" id="legend2"></div>
+    <div class="chart" id="weekly"></div>
+    <details><summary>Als Tabelle anzeigen</summary><div id="table"></div></details>
+  </section>
+
+  <section class="card"><h2>Ehrentafel</h2><div class="grid2" id="fun"></div></section>
+
+  <section class="card"><h2>Letzte Fahrten</h2><ul class="feed" id="feed"></ul></section>
+
+  <section class="card"><h2>Regeln</h2><ul class="rules" id="rules"></ul></section>
+
+  <footer>Daten: intervals.icu · aktualisiert stündlich · nur Fahrzeit, Kilometer &amp; Datum, keine Leistungs-, Gesundheits- oder GPS-Daten</footer>
+</div>
+
+<script>
+const COLORS = ["var(--series-1)","var(--series-2)","var(--series-3)"];
+const MEDALS = ["🥇","🥈","🥉"];
+const fmtH = s => { const h=Math.floor(s/3600), m=Math.round((s%3600)/60); return m===60?`${h+1}:00`:`${h}:${String(m).padStart(2,"0")}`; };
+const fmtD = iso => new Date(iso+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"});
+const fmtDS = iso => new Date(iso+"T12:00:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const NS="http://www.w3.org/2000/svg";
+let METRIC="time";
+const M={
+  time:{tot:p=>p.total_sec, ride:r=>r.sec, wk:w=>(w?.sec||0), unit:v=>v/3600, fmt:v=>fmtH(v*3600)+" h", axis:v=>v+"h", fmtTot:p=>fmtH(p.total_sec), gap:d=>"−"+fmtH(d), sub:"Std.", board:"Gesamtwertung · Fahrzeit", race:"Rennverlauf · kumulierte Stunden", week:"Stunden pro Woche", note:""},
+  km:{tot:p=>p.total_km||0, ride:r=>r.km||0, wk:w=>(w?.km||0), unit:v=>v, fmt:v=>fmtKm(v)+" km", axis:v=>v+"", fmtTot:p=>fmtKm(p.total_km||0), gap:d=>"−"+fmtKm(d), sub:"km", board:"Kilometerwertung", race:"Rennverlauf · kumulierte Kilometer", week:"Kilometer pro Woche", note:"Nebenwertung – virtuelle km hängen von App, Strecke und Gewicht ab."}
+};
+const fmtKm=v=>Math.round(v).toLocaleString("de-DE");
+const el=(n,a={},p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+
+fetch("data.json?"+Date.now()).then(r=>r.json()).then(render).catch(e=>{$("board").innerHTML=`<div class="empty">Daten konnten nicht geladen werden.</div>`;console.error(e)});
+
+function render(D){
+  const P = D.participants.map((p,i)=>({...p,color:COLORS[i%3],idx:i}));
+  $("season").textContent = `${D.season} · ${fmtDS(D.start)} – ${fmtDS(D.end)}`;
+  const s=new Date(D.start+"T00:00:00"), e=new Date(D.end+"T23:59:59"), now=new Date();
+  const total=(e-s)/864e5, done=Math.min(Math.max((now-s)/864e5,0),total);
+  $("days").textContent = now>e ? "Saison beendet" : `noch ${Math.ceil(total-done)} Tage`;
+  $("prog").style.width = (done/total*100).toFixed(1)+"%";
+  $("updated").textContent = "Stand: "+new Date(D.updated).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+
+  document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{METRIC=b.dataset.m;document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x===b));drawMetric(D,P);});
+  const legend = P.map(p=>`<span><span class="dot" style="background:${p.color}"></span>${esc(p.name)}</span>`).join("");
+  $("legend1").innerHTML=legend; $("legend2").innerHTML=legend;
+  drawMetric(D,P); fun(P); feed(P); rules(D);
+  let rt; addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{raceChart(D,P);weeklyChart(D,P);},150)});
+}
+
+function drawMetric(D,P){
+  const mm=M[METRIC];
+  $("h-board").textContent=mm.board; $("h-race").textContent=mm.race; $("h-week").textContent=mm.week; $("note").textContent=mm.note; $("note").style.display=mm.note?"":"none";
+  const ranked=[...P].sort((a,b)=>mm.tot(b)-mm.tot(a));
+  const lead=mm.tot(ranked[0]||{})||0;
+  $("board").innerHTML = ranked.map((p,i)=>`
+    <div class="row">
+      <div class="rank">${mm.tot(p)>0?MEDALS[i]||i+1:"·"}</div>
+      <div>
+        <div class="who"><span class="dot" style="background:${p.color}"></span>${esc(p.name)}${p.error?` <span class="badge">${esc(p.error)}</span>`:""}</div>
+        <div class="facts"><span>${p.rides} Fahrten</span><span>${p.bonus_weeks} Bonuswochen</span>${p.streak>=2?`<span>🔥 ${p.streak} Wochen Serie</span>`:""}</div>
+      </div>
+      <div class="hours"><b>${mm.fmtTot(p)}</b><small>${i===0||!lead?mm.sub:mm.gap(lead-mm.tot(p))}</small></div>
+    </div>`).join("");
+
+  raceChart(D,P); weeklyChart(D,P); table(D,P);
+}
+
+function raceChart(D,P){
+  const box=$("race"); box.innerHTML="";
+  const start=new Date(D.start+"T12:00:00"); const today=new Date(D.updated.slice(0,10)+"T12:00:00");
+  const days=[]; for(let d=new Date(start); d<=today; d.setDate(d.getDate()+1)) days.push(d.toISOString().slice(0,10));
+  if(days.length<2){ box.innerHTML='<div class="empty">Der Rennverlauf erscheint ab Tag 2.</div>'; return; }
+  const series=P.map(p=>{let acc=0; const by={}; const mm=M[METRIC]; p.rides_list.forEach(r=>by[r.date]=(by[r.date]||0)+mm.ride(r)); return days.map(d=>mm.unit(acc+=(by[d]||0)));});
+  const W=Math.max(320,box.clientWidth||900),H=W<600?220:280,m={l:36,r:70,t:10,b:26};
+  const max=Math.max(1,...series.flat()); const nice=METRIC==="km"?(max>500?250:max>100?50:10):5; const yMax=Math.ceil(max/nice)*nice||nice;
+  const x=i=>m.l+i*(W-m.l-m.r)/(days.length-1), y=v=>H-m.b-v*(H-m.t-m.b)/yMax;
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Kumulierte Fahrstunden pro Teilnehmer"},box);
+  const g=el("g",{class:"grid"},svg), ax=el("g",{class:"axis"},svg);
+  for(let v=0; v<=yMax; v+=yMax/5){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v)},g); el("text",{x:m.l-8,y:y(v)+4,"text-anchor":"end"},ax).textContent=M[METRIC].axis(Math.round(v)); }
+  const step=Math.max(1,Math.ceil(days.length/(W<600?4:7)));
+  days.forEach((d,i)=>{ if(i%step===0) el("text",{x:x(i),y:H-6,"text-anchor":"middle"},ax).textContent=fmtDS(d); });
+  series.forEach((s,k)=>{
+    el("path",{d:s.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(""),fill:"none",stroke:P[k].color,"stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},svg);
+  });
+  // direkte Endlabels, Kollisionen auflösen
+  const ends=series.map((s,k)=>({k,y:y(s[s.length-1]),v:s[s.length-1]})).sort((a,b)=>a.y-b.y);
+  for(let i=1;i<ends.length;i++) if(ends[i].y-ends[i-1].y<14) ends[i].y=ends[i-1].y+14;
+  ends.forEach(e=>{ el("circle",{cx:x(days.length-1),cy:y(e.v),r:4,fill:P[e.k].color,stroke:"var(--surface-1)","stroke-width":2},svg);
+    const t=el("text",{x:x(days.length-1)+10,y:e.y+4,fill:"var(--text-primary)","font-size":12,"font-weight":600},svg); t.textContent=P[e.k].name.split(" ")[0]; });
+  // Crosshair
+  const cross=el("line",{y1:m.t,y2:H-m.b,stroke:"var(--text-muted)","stroke-dasharray":"3 3",opacity:0},svg);
+  const dots=series.map((_,k)=>el("circle",{r:4,fill:P[k].color,stroke:"var(--surface-1)","stroke-width":2,opacity:0},svg));
+  const tip=document.createElement("div"); tip.className="tip"; box.appendChild(tip);
+  const hit=el("rect",{x:m.l,y:m.t,width:W-m.l-m.r,height:H-m.t-m.b,fill:"transparent"},svg);
+  const move=ev=>{ const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)*W/r.width;
+    const i=Math.max(0,Math.min(days.length-1,Math.round((px-m.l)/((W-m.l-m.r)/(days.length-1)))));
+    cross.setAttribute("x1",x(i)); cross.setAttribute("x2",x(i)); cross.setAttribute("opacity",.6);
+    dots.forEach((d,k)=>{d.setAttribute("cx",x(i));d.setAttribute("cy",y(series[k][i]));d.setAttribute("opacity",1)});
+    const order=series.map((s,k)=>({k,v:s[i]})).sort((a,b)=>b.v-a.v);
+    tip.innerHTML=`<div class="t">${fmtD(days[i])}</div>`+order.map(o=>`<div class="l"><span class="dot" style="background:${P[o.k].color}"></span>${esc(P[o.k].name)} · ${M[METRIC].fmt(o.v)}</div>`).join("");
+    const bx=box.getBoundingClientRect(); let left=ev.clientX-bx.left+14; if(left+tip.offsetWidth>bx.width) left=ev.clientX-bx.left-tip.offsetWidth-14;
+    tip.style.left=Math.max(0,left)+"px"; tip.style.top=Math.max(0,ev.clientY-bx.top-20)+"px"; tip.style.opacity=1; };
+  hit.addEventListener("pointermove",move); hit.addEventListener("pointerleave",()=>{tip.style.opacity=0;cross.setAttribute("opacity",0);dots.forEach(d=>d.setAttribute("opacity",0))});
+}
+
+function weeklyChart(D,P){
+  const box=$("weekly"); box.innerHTML="";
+  const weeks=D.weeks; const W=Math.max(320,box.clientWidth||900),H=W<600?200:240,m={l:36,r:10,t:10,b:26};
+  const mm=M[METRIC]; const vals=P.map(p=>weeks.map(w=>mm.unit(mm.wk(p.weeks[w]))));
+  const vmax=Math.max(...vals.flat()); const yStep=METRIC==="km"?(vmax>200?50:vmax>50?20:10):(vmax<=6?1:2); const yMax=Math.max(yStep*2,Math.ceil(vmax/yStep)*yStep);
+  const band=(W-m.l-m.r)/weeks.length, gap=2, bw=Math.min(22,(band*0.7-gap*(P.length-1))/P.length);
+  const y=v=>H-m.b-v*(H-m.t-m.b)/yMax;
+  const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Fahrstunden pro Woche und Teilnehmer"},box);
+  const g=el("g",{class:"grid"},svg), ax=el("g",{class:"axis"},svg);
+  for(let v=0; v<=yMax; v+=yStep){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v)},g); el("text",{x:m.l-8,y:y(v)+4,"text-anchor":"end"},ax).textContent=mm.axis(v); }
+  const tip=document.createElement("div"); tip.className="tip"; box.appendChild(tip);
+  const ls=Math.max(1,Math.ceil(weeks.length/(W<600?5:10)));
+  weeks.forEach((w,i)=>{
+    const cx=m.l+band*i+band/2, gw=bw*P.length+gap*(P.length-1);
+    if(i%ls===0) el("text",{x:cx,y:H-6,"text-anchor":"middle"},ax).textContent=fmtDS(w);
+    P.forEach((p,k)=>{ const v=vals[k][i]; if(v<=0) return; const x0=cx-gw/2+k*(bw+gap), y0=y(v), h=H-m.b-y0, r=Math.min(4,bw/2,h);
+      el("path",{d:`M${x0},${H-m.b}V${y0+r}Q${x0},${y0} ${x0+r},${y0}H${x0+bw-r}Q${x0+bw},${y0} ${x0+bw},${y0+r}V${H-m.b}Z`,fill:p.color},svg); });
+    const hit=el("rect",{x:m.l+band*i,y:m.t,width:band,height:H-m.t-m.b,fill:"transparent"},svg);
+    hit.addEventListener("pointermove",ev=>{
+      tip.innerHTML=`<div class="t">Woche ab ${fmtD(w)}</div>`+P.map((p,k)=>`<div class="l"><span class="dot" style="background:${p.color}"></span>${esc(p.name)} · ${mm.fmt(vals[k][i])} · ${p.weeks[w]?.n||0}× ${(p.weeks[w]?.n||0)>=D.bonus_week_min_rides?"⭐":""}</div>`).join("");
+      const bx=box.getBoundingClientRect(); let left=ev.clientX-bx.left+14; if(left+tip.offsetWidth>bx.width) left=ev.clientX-bx.left-tip.offsetWidth-14;
+      tip.style.left=Math.max(0,left)+"px"; tip.style.top=Math.max(0,ev.clientY-bx.top-20)+"px"; tip.style.opacity=1; });
+    hit.addEventListener("pointerleave",()=>tip.style.opacity=0);
+  });
+}
+
+function table(D,P){
+  $("table").innerHTML=`<table><thead><tr><th>Woche ab</th>${P.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>`+
+    [...D.weeks].reverse().map(w=>`<tr><td>${fmtD(w)}</td>${P.map(p=>`<td>${M[METRIC].fmt(M[METRIC].unit(M[METRIC].wk(p.weeks[w])))} · ${p.weeks[w]?.n||0}×${(p.weeks[w]?.n||0)>=D.bonus_week_min_rides?" ⭐":""}</td>`).join("")}</tr>`).join("")+"</tbody></table>";
+}
+
+function fun(P){
+  const top=(key,fmt,label,sub)=>{ const b=[...P].sort((a,c)=>c[key]-a[key])[0]; if(!b||!b[key]) return `<div class="fun"><div class="k">${label}</div><div class="v">noch offen</div><div class="s">${sub}</div></div>`;
+    return `<div class="fun"><div class="k">${label}</div><div class="v"><span class="dot" style="display:inline-block;background:${b.color};margin-right:6px"></span>${esc(b.name)}</div><div class="s">${fmt(b)}</div></div>`; };
+  $("fun").innerHTML=[
+    top("longest_sec",b=>`${fmtH(b.longest_sec)} h am ${fmtDS(b.longest_date)}`,"🏔️ Längste Fahrt","—"),
+    top("longest_km",b=>`${fmtKm(b.longest_km)} km am ${fmtDS(b.longest_km_date)}`,"🛣️ Weiteste Fahrt","—"),
+    top("max_week_rides",b=>`${b.max_week_rides} Einheiten in einer Woche`,"⚙️ Fleißigste Woche","—"),
+    top("early",b=>`${b.early}× vor 7 Uhr`,"🌅 Frühaufsteher","Fahrten vor 7 Uhr"),
+    top("late",b=>`${b.late}× nach 21 Uhr`,"🦉 Nachteule","Fahrten nach 21 Uhr"),
+  ].join("");
+}
+
+function feed(P){
+  const all=P.flatMap(p=>p.rides_list.map(r=>({...r,p}))).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,12);
+  $("feed").innerHTML = all.length? all.map(r=>`<li><span class="dot" style="background:${r.p.color}"></span><span><b>${esc(r.p.name)}</b> · ${fmtH(r.sec)} h${r.km?" · "+fmtKm(r.km)+" km":""} ${r.indoor?"auf der Rolle":"draußen"}${r.manual?' <span class="badge">manuell</span>':""}</span><span class="d">${fmtD(r.date)}${r.time?" · "+r.time:""}</span></li>`).join("") : '<li class="empty">Noch keine Fahrten.</li>';
+}
+
+function rules(D){
+  $("rules").innerHTML=[`Gewertet wird die <b>Fahrzeit</b> aller Radfahrten (Rolle &amp; draußen) vom ${fmtDS(D.start)} bis ${fmtDS(D.end)}`,
+    `<b>Bonuswoche ⭐</b>: mindestens ${D.bonus_week_min_rides} Fahrten à ≥ ${D.min_ride_minutes} Min. in einer Woche (Mo–So).`,
+    `<b>Serie 🔥</b>: Bonuswochen am Stück.`,`<b>Kilometer</b> laufen als Nebenwertung mit – virtuelle km sind zwischen Apps nicht vergleichbar.`,`E-Bike zählt nicht. 😉`].map(x=>`<li>${x}</li>`).join("");
+}
+</script>
+</body>
+</html>

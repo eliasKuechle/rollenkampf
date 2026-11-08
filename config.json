@@ -1,0 +1,15 @@
+{
+  "title": "Rollenkampf",
+  "season": "Winter 2026/27",
+  "start": "2026-11-01",
+  "end": "2027-03-31",
+  "timezone": "Europe/Berlin",
+  "ride_types": ["Ride", "VirtualRide", "GravelRide", "MountainBikeRide"],
+  "bonus_week_min_rides": 3,
+  "min_ride_minutes": 20,
+  "participants": [
+    {"name": "Elias", "athlete_id": "i782719"},
+    {"name": "Freund 1", "athlete_id": "", "key_env": "INTERVALS_KEY_FREUND1"},
+    {"name": "Freund 2", "athlete_id": "", "key_env": "INTERVALS_KEY_FREUND2"}
+  ]
+}
