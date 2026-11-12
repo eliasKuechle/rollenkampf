@@ -2,3 +2,4 @@
 __pycache__/
 site/data.json
 .DS_Store
+_to_delete/
