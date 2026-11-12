@@ -16,7 +16,7 @@ rechnet die Wertung und veröffentlicht das Dashboard auf GitHub Pages.
 | Datei | Zweck |
 |---|---|
 | `config.json` | Teilnehmer, Zeitraum, Regeln |
-| `manual.json` | Fahrten von Hand nachtragen, z. B. `{"name": "Elias", "date": "2026-11-20", "minutes": 60}` |
+| `manual.json` | Fahrten von Hand nachtragen, z. B. `{"name": "Elias", "date": "2026-11-20", "minutes": 60, "km": 30}` |
 | `scripts/fetch.py` | Holt Daten, rechnet Wertung, schreibt `site/data.json` |
 | `site/index.html` | Dashboard (statisch, ohne Abhängigkeiten) |
 | `.github/workflows/update.yml` | Stündlicher Lauf + Deployment auf Pages |
@@ -32,4 +32,6 @@ cd site && python3 -m http.server   # → http://localhost:8000
 ```
 
 ## Datenschutz
-In `data.json` landen nur Datum, Startzeit, Dauer und Rolle/draußen – keine Watt, kein Puls, keine Strecken.
+In `data.json` landen nur Datum, Startzeit, Dauer, Kilometer, TSS und Rolle/draußen – keine Watt, kein Puls, keine GPS-Strecken.
+
+Hauptwertung ist die Fahrzeit; TSS und Kilometer laufen als umschaltbare Nebenwertungen mit.

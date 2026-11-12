@@ -59,7 +59,7 @@ h1 span{color:var(--accent)}
 .tip .l{display:flex;align-items:center;gap:6px;color:var(--text-primary);font-variant-numeric:tabular-nums}
 .axis text{fill:var(--text-muted);font-size:11px}
 .grid line{stroke:var(--grid)}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
 .fun{background:var(--surface-2);border-radius:12px;padding:12px 14px}
 .fun .k{color:var(--text-muted);font-size:12.5px}
 .fun .v{font-weight:650;font-size:16px;margin-top:2px}
@@ -94,7 +94,7 @@ footer{color:var(--text-muted);font-size:12px;text-align:center;margin-top:24px}
     <div class="meta"><div id="days"></div><div class="progress"><i id="prog"></i></div><div id="updated" style="margin-top:6px"></div></div>
   </header>
 
-  <div class="seg" role="group" aria-label="Wertung wählen"><button data-m="time" aria-pressed="true">⏱ Fahrzeit</button><button data-m="km" aria-pressed="false">📏 Kilometer</button></div>
+  <div class="seg" role="group" aria-label="Wertung wählen"><button data-m="time" aria-pressed="true">⏱ Fahrzeit</button><button data-m="tss" aria-pressed="false">🔥 TSS</button><button data-m="km" aria-pressed="false">📏 Kilometer</button></div>
 
   <section class="card"><h2 id="h-board">Gesamtwertung · Fahrzeit</h2><div class="note" id="note"></div><div class="board" id="board"></div></section>
 
@@ -117,7 +117,7 @@ footer{color:var(--text-muted);font-size:12px;text-align:center;margin-top:24px}
 
   <section class="card"><h2>Regeln</h2><ul class="rules" id="rules"></ul></section>
 
-  <footer>Daten: intervals.icu · aktualisiert stündlich · nur Fahrzeit, Kilometer &amp; Datum, keine Leistungs-, Gesundheits- oder GPS-Daten</footer>
+  <footer>Daten: intervals.icu · aktualisiert stündlich · nur Fahrzeit, Kilometer, TSS &amp; Datum – keine Watt-, Puls- oder GPS-Daten</footer>
 </div>
 
 <script>
@@ -132,6 +132,7 @@ const NS="http://www.w3.org/2000/svg";
 let METRIC="time";
 const M={
   time:{tot:p=>p.total_sec, ride:r=>r.sec, wk:w=>(w?.sec||0), unit:v=>v/3600, fmt:v=>fmtH(v*3600)+" h", axis:v=>v+"h", fmtTot:p=>fmtH(p.total_sec), gap:d=>"−"+fmtH(d), sub:"Std.", board:"Gesamtwertung · Fahrzeit", race:"Rennverlauf · kumulierte Stunden", week:"Stunden pro Woche", note:""},
+  tss:{tot:p=>p.total_tss||0, ride:r=>r.tss||0, wk:w=>(w?.tss||0), unit:v=>v, fmt:v=>Math.round(v)+" TSS", axis:v=>v+"", fmtTot:p=>String(p.total_tss||0), gap:d=>"−"+Math.round(d), sub:"TSS", board:"Belastungswertung · TSS", race:"Rennverlauf · kumulierte Belastung (TSS)", week:"TSS pro Woche", note:"Training Stress Score: Dauer × Intensität² – harte Einheiten zählen mehr. Berechnet von intervals.icu aus Watt bzw. Puls."},
   km:{tot:p=>p.total_km||0, ride:r=>r.km||0, wk:w=>(w?.km||0), unit:v=>v, fmt:v=>fmtKm(v)+" km", axis:v=>v+"", fmtTot:p=>fmtKm(p.total_km||0), gap:d=>"−"+fmtKm(d), sub:"km", board:"Kilometerwertung", race:"Rennverlauf · kumulierte Kilometer", week:"Kilometer pro Woche", note:"Nebenwertung – virtuelle km hängen von App, Strecke und Gewicht ab."}
 };
 const fmtKm=v=>Math.round(v).toLocaleString("de-DE");
@@ -160,7 +161,8 @@ function drawMetric(D,P){
   $("h-board").textContent=mm.board; $("h-race").textContent=mm.race; $("h-week").textContent=mm.week; $("note").textContent=mm.note; $("note").style.display=mm.note?"":"none";
   const ranked=[...P].sort((a,b)=>mm.tot(b)-mm.tot(a));
   const lead=mm.tot(ranked[0]||{})||0;
-  $("board").innerHTML = ranked.map((p,i)=>`
+  const ranks=[]; ranked.forEach((p,i)=>ranks.push(i>0&&mm.tot(p)===mm.tot(ranked[i-1])?ranks[i-1]:i));
+  $("board").innerHTML = ranked.map((p,j)=>{const i=ranks[j]; return `
     <div class="row">
       <div class="rank">${mm.tot(p)>0?MEDALS[i]||i+1:"·"}</div>
       <div>
@@ -168,7 +170,7 @@ function drawMetric(D,P){
         <div class="facts"><span>${p.rides} Fahrten</span><span>${p.bonus_weeks} Bonuswochen</span>${p.streak>=2?`<span>🔥 ${p.streak} Wochen Serie</span>`:""}</div>
       </div>
       <div class="hours"><b>${mm.fmtTot(p)}</b><small>${i===0||!lead?mm.sub:mm.gap(lead-mm.tot(p))}</small></div>
-    </div>`).join("");
+    </div>`;}).join("");
 
   raceChart(D,P); weeklyChart(D,P); table(D,P);
 }
@@ -180,11 +182,12 @@ function raceChart(D,P){
   if(days.length<2){ box.innerHTML='<div class="empty">Der Rennverlauf erscheint ab Tag 2.</div>'; return; }
   const series=P.map(p=>{let acc=0; const by={}; const mm=M[METRIC]; p.rides_list.forEach(r=>by[r.date]=(by[r.date]||0)+mm.ride(r)); return days.map(d=>mm.unit(acc+=(by[d]||0)));});
   const W=Math.max(320,box.clientWidth||900),H=W<600?220:280,m={l:36,r:70,t:10,b:26};
-  const max=Math.max(1,...series.flat()); const nice=METRIC==="km"?(max>500?250:max>100?50:10):5; const yMax=Math.ceil(max/nice)*nice||nice;
+  const max=Math.max(1,...series.flat()); const nice=METRIC!=="time"?(max>500?250:max>100?50:10):5; const yMax=Math.ceil(max/nice)*nice||nice;
   const x=i=>m.l+i*(W-m.l-m.r)/(days.length-1), y=v=>H-m.b-v*(H-m.t-m.b)/yMax;
   const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Kumulierte Fahrstunden pro Teilnehmer"},box);
   const g=el("g",{class:"grid"},svg), ax=el("g",{class:"axis"},svg);
-  for(let v=0; v<=yMax; v+=yMax/5){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v)},g); el("text",{x:m.l-8,y:y(v)+4,"text-anchor":"end"},ax).textContent=M[METRIC].axis(Math.round(v)); }
+  const tick=METRIC!=="time"?nice:yMax/5;
+  for(let v=0; v<=yMax; v+=tick){ el("line",{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v)},g); el("text",{x:m.l-8,y:y(v)+4,"text-anchor":"end"},ax).textContent=M[METRIC].axis(Math.round(v)); }
   const step=Math.max(1,Math.ceil(days.length/(W<600?4:7)));
   days.forEach((d,i)=>{ if(i%step===0) el("text",{x:x(i),y:H-6,"text-anchor":"middle"},ax).textContent=fmtDS(d); });
   series.forEach((s,k)=>{
@@ -215,7 +218,7 @@ function weeklyChart(D,P){
   const box=$("weekly"); box.innerHTML="";
   const weeks=D.weeks; const W=Math.max(320,box.clientWidth||900),H=W<600?200:240,m={l:36,r:10,t:10,b:26};
   const mm=M[METRIC]; const vals=P.map(p=>weeks.map(w=>mm.unit(mm.wk(p.weeks[w]))));
-  const vmax=Math.max(...vals.flat()); const yStep=METRIC==="km"?(vmax>200?50:vmax>50?20:10):(vmax<=6?1:2); const yMax=Math.max(yStep*2,Math.ceil(vmax/yStep)*yStep);
+  const vmax=Math.max(...vals.flat()); const yStep=METRIC!=="time"?(vmax>200?50:vmax>50?20:10):(vmax<=6?1:2); const yMax=Math.max(yStep*2,Math.ceil(vmax/yStep)*yStep);
   const band=(W-m.l-m.r)/weeks.length, gap=2, bw=Math.min(22,(band*0.7-gap*(P.length-1))/P.length);
   const y=v=>H-m.b-v*(H-m.t-m.b)/yMax;
   const svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"Fahrstunden pro Woche und Teilnehmer"},box);
@@ -256,13 +259,13 @@ function fun(P){
 
 function feed(P){
   const all=P.flatMap(p=>p.rides_list.map(r=>({...r,p}))).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,12);
-  $("feed").innerHTML = all.length? all.map(r=>`<li><span class="dot" style="background:${r.p.color}"></span><span><b>${esc(r.p.name)}</b> · ${fmtH(r.sec)} h${r.km?" · "+fmtKm(r.km)+" km":""} ${r.indoor?"auf der Rolle":"draußen"}${r.manual?' <span class="badge">manuell</span>':""}</span><span class="d">${fmtD(r.date)}${r.time?" · "+r.time:""}</span></li>`).join("") : '<li class="empty">Noch keine Fahrten.</li>';
+  $("feed").innerHTML = all.length? all.map(r=>`<li><span class="dot" style="background:${r.p.color}"></span><span><b>${esc(r.p.name)}</b> · ${fmtH(r.sec)} h${r.km?" · "+fmtKm(r.km)+" km":""}${r.tss?" · "+r.tss+" TSS":""} ${r.indoor?"auf der Rolle":"draußen"}${r.manual?' <span class="badge">manuell</span>':""}</span><span class="d">${fmtD(r.date)}${r.time?" · "+r.time:""}</span></li>`).join("") : '<li class="empty">Noch keine Fahrten.</li>';
 }
 
 function rules(D){
   $("rules").innerHTML=[`Gewertet wird die <b>Fahrzeit</b> aller Radfahrten (Rolle &amp; draußen) vom ${fmtDS(D.start)} bis ${fmtDS(D.end)}`,
     `<b>Bonuswoche ⭐</b>: mindestens ${D.bonus_week_min_rides} Fahrten à ≥ ${D.min_ride_minutes} Min. in einer Woche (Mo–So).`,
-    `<b>Serie 🔥</b>: Bonuswochen am Stück.`,`<b>Kilometer</b> laufen als Nebenwertung mit – virtuelle km sind zwischen Apps nicht vergleichbar.`,`E-Bike zählt nicht. 😉`].map(x=>`<li>${x}</li>`).join("");
+    `<b>Serie 🔥</b>: Bonuswochen am Stück.`,`<b>TSS</b> (Trainingsbelastung) läuft als Nebenwertung mit – belohnt harte Einheiten.`,`<b>Kilometer</b> laufen als Nebenwertung mit – virtuelle km sind zwischen Apps nicht vergleichbar.`,`E-Bike zählt nicht. 😉`].map(x=>`<li>${x}</li>`).join("");
 }
 </script>
 </body>

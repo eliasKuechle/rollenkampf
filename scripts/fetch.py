@@ -4,7 +4,7 @@
 Umgebung:
   INTERVALS_API_KEY        Key mit Lesezugriff auf alle Teilnehmer (Coach-Zugriff)
   <key_env aus config>     optional: eigener Key pro Teilnehmer, falls Coach-Zugriff nicht klappt
-Nur Datum, Startzeit, Dauer, Distanz (km) und Indoor/Outdoor landen in data.json – keine Watt, kein Puls, keine GPS-Strecken.
+Nur Datum, Startzeit, Dauer, Distanz (km), Trainingsbelastung (TSS) und Indoor/Outdoor landen in data.json – keine Watt, kein Puls, keine GPS-Strecken.
 """
 import base64, json, os, sys, urllib.error, urllib.request
 from datetime import date, datetime, timedelta, timezone
@@ -63,6 +63,7 @@ def fetch_rides(p, today):
         ts = a["start_date_local"]
         rides.append({"date": ts[:10], "time": ts[11:16], "sec": sec,
                       "km": round((a.get("distance") or 0) / 1000, 1),
+                      "tss": int(round(a.get("icu_training_load") or 0)),
                       "indoor": bool(a.get("trainer")) or a.get("type") == "VirtualRide",
                       "manual": False})
     return rides, None, strava_only
@@ -74,17 +75,19 @@ def manual_rides(name):
         if m.get("name") == name:
             out.append({"date": m["date"], "time": m.get("time", ""), "sec": int(m["minutes"]) * 60,
                         "km": float(m.get("km", 0)),
+                        "tss": int(m.get("tss", 0)),
                         "indoor": m.get("indoor", True), "manual": True})
     return out
 
 
 def stats(rides, weeks):
-    by_week = {w: {"sec": 0, "km": 0.0, "n": 0} for w in weeks}
+    by_week = {w: {"sec": 0, "km": 0.0, "tss": 0, "n": 0} for w in weeks}
     for r in rides:
         w = week_start(date.fromisoformat(r["date"])).isoformat()
         if w in by_week:
             by_week[w]["sec"] += r["sec"]
             by_week[w]["km"] = round(by_week[w]["km"] + r["km"], 1)
+            by_week[w]["tss"] += r["tss"]
             if r["sec"] >= MIN_SEC:
                 by_week[w]["n"] += 1
     bonus = [w for w in weeks if by_week[w]["n"] >= BONUS_N]
@@ -102,6 +105,7 @@ def stats(rides, weeks):
     return {
         "total_sec": sum(r["sec"] for r in rides),
         "total_km": round(sum(r["km"] for r in rides), 1),
+        "total_tss": sum(r["tss"] for r in rides),
         "longest_km": best_km["km"] if best_km else 0,
         "longest_km_date": best_km["date"] if best_km else None,
         "rides": len(rides),
@@ -134,7 +138,7 @@ def main():
                        key=lambda r: (r["date"], r["time"]))
         out.append({"name": p["name"], "error": err, "strava_only": strava_only,
                     "rides_list": rides, **stats(rides, weeks)})
-        print(f"{p['name']}: {len(rides)} Fahrten, {sum(r['sec'] for r in rides) / 3600:.1f} h, {sum(r['km'] for r in rides):.0f} km"
+        print(f"{p['name']}: {len(rides)} Fahrten, {sum(r['sec'] for r in rides) / 3600:.1f} h, {sum(r['km'] for r in rides):.0f} km, {sum(r['tss'] for r in rides)} TSS"
               + (f"  [{err}]" if err else ""))
     data = {"title": CFG["title"], "season": CFG["season"], "start": CFG["start"], "end": CFG["end"],
             "bonus_week_min_rides": BONUS_N, "min_ride_minutes": MIN_SEC // 60,
