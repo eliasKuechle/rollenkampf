@@ -2,7 +2,7 @@ name: Dashboard aktualisieren
 
 on:
   schedule:
-    - cron: "17 * * * *"   # stündlich
+    - cron: "*/5 * * * *"   # so oft wie GitHub erlaubt (in der Praxis oft 5–15 Min.)
   workflow_dispatch:
   push:
     branches: [main]
@@ -11,14 +11,17 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write   # für Keepalive (verhindert Pause nach 60 Tagen Inaktivität)
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.diff.outputs.deploy }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,16 +31,36 @@ jobs:
         run: python scripts/fetch.py
         env:
           INTERVALS_API_KEY: ${{ secrets.INTERVALS_API_KEY }}
-          # Falls Coach-Zugriff nicht klappt: eigene Keys der Freunde als Secrets anlegen
-          INTERVALS_KEY_FREUND1: ${{ secrets.INTERVALS_KEY_FREUND1 }}
-          INTERVALS_KEY_FREUND2: ${{ secrets.INTERVALS_KEY_FREUND2 }}
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Prüfen, ob sich etwas geändert hat
+        id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          PAGE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data.json
+        run: |
+          curl -fsSL "$PAGE" -o /tmp/old.json || echo '{}' > /tmp/old.json
+          python - <<'PY'
+          import json, os
+          new = json.load(open("site/data.json"))
+          try:
+              old = json.load(open("/tmp/old.json"))
+          except Exception:
+              old = {}
+          strip = lambda d: {k: v for k, v in d.items() if k != "updated"}
+          changed = strip(new) != strip(old)
+          deploy = changed or os.environ["EVENT"] != "schedule"
+          print("Daten geändert:", changed, "| Deploy:", deploy)
+          open(os.environ["GITHUB_OUTPUT"], "a").write(f"deploy={'true' if deploy else 'false'}\n")
+          PY
+      - if: steps.diff.outputs.deploy == 'true'
+        uses: actions/configure-pages@v5
+      - if: steps.diff.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
     needs: build
+    if: needs.build.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -45,3 +68,10 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  keepalive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: liskin/gh-workflow-keepalive@v1

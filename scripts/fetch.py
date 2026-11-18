@@ -61,11 +61,12 @@ def fetch_rides(p, today):
         if sec <= 0:
             continue
         ts = a["start_date_local"]
-        rides.append({"date": ts[:10], "time": ts[11:16], "sec": sec,
+        manual = a.get("source") == "MANUAL"
+        rides.append({"date": ts[:10], "time": "" if manual else ts[11:16], "sec": sec,
                       "km": round((a.get("distance") or 0) / 1000, 1),
                       "tss": int(round(a.get("icu_training_load") or 0)),
                       "indoor": bool(a.get("trainer")) or a.get("type") == "VirtualRide",
-                      "manual": False})
+                      "manual": manual})
     return rides, None, strava_only
 
 
